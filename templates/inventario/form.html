@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ titulo }}</h1>
+    <a href="{% url 'lista_piezas' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Inventario
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.codigo|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.categoria|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion|as_crispy_field }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            {{ form.stock_actual|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.stock_minimo|as_crispy_field }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.ubicacion|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'lista_piezas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Guardar Pieza
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-4">
+            <div class="card-body bg-light">
+                <h6><i class="bi bi-info-circle"></i> Información</h6>
+                <ul class="mb-0 small text-muted">
+                    <li><strong>Código:</strong> Debe ser único en el sistema</li>
+                    <li><strong>Stock Actual:</strong> Cantidad actual disponible en bodega</li>
+                    <li><strong>Stock Mínimo:</strong> Nivel crítico que activará alertas automáticas</li>
+                    <li><strong>Ubicación:</strong> Ubicación física en la bodega</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

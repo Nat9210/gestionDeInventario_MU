@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ titulo }}</h1>
+    <a href="{% url 'lista_piezas' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Inventario
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" id="movimiento-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        {{ form.pieza|as_crispy_field }}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.cantidad|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Actual</label>
+                            <div class="form-control bg-light" id="stock-actual">
+                                Seleccione una pieza para ver el stock
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.observaciones|as_crispy_field }}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'lista_piezas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-{% if tipo == 'entrada' %}success{% else %}danger{% endif %}">
+                            {% if tipo == 'entrada' %}
+                                <i class="bi bi-arrow-down-circle"></i> Registrar Entrada
+                            {% else %}
+                                <i class="bi bi-arrow-up-circle"></i> Registrar Salida
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Información adicional -->
+        <div class="card mt-4">
+            <div class="card-body bg-light">
+                <h6><i class="bi bi-info-circle"></i> Información</h6>
+                <ul class="mb-0 small text-muted">
+                    {% if tipo == 'entrada' %}
+                        <li>Las entradas incrementan el stock de la pieza seleccionada</li>
+                        <li>Ejemplos: compras, devoluciones, ajustes positivos</li>
+                    {% else %}
+                        <li>Las salidas reducen el stock de la pieza seleccionada</li>
+                        <li>No se puede registrar una salida mayor al stock disponible</li>
+                        <li>Ejemplos: uso en proyectos, mantenimiento, ajustes negativos</li>
+                    {% endif %}
+                    <li>El stock se actualiza automáticamente al guardar el movimiento</li>
+                    <li>Se creará una alerta automática si el stock queda por debajo del mínimo</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const piezaSelect = document.getElementById('pieza-select');
+    const stockActual = document.getElementById('stock-actual');
+    
+    if (piezaSelect) {
+        piezaSelect.addEventListener('change', function() {
+            const piezaId = this.value;
+            if (piezaId) {
+                fetch(`{% url 'obtener_stock_pieza' %}?pieza_id=${piezaId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            stockActual.textContent = 'Error al obtener stock';
+                            stockActual.className = 'form-control bg-danger text-white';
+                        } else {
+                            stockActual.textContent = `${data.stock_actual} unidades`;
+                            stockActual.className = 'form-control bg-light';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        stockActual.textContent = 'Error al obtener stock';
+                        stockActual.className = 'form-control bg-danger text-white';
+                    });
+            } else {
+                stockActual.textContent = 'Seleccione una pieza para ver el stock';
+                stockActual.className = 'form-control bg-light';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

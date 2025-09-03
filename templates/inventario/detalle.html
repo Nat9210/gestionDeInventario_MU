@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle de Pieza - {{ pieza.codigo }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Detalle de Pieza: {{ pieza.codigo }}</h1>
+    <div class="btn-group">
+        {% if user.perfil in 'administrador,inventario,logistica' %}
+            <a href="{% url 'editar_pieza' pieza.id %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        {% endif %}
+        <a href="{% url 'lista_piezas' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Inventario
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información de la Pieza -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Información General
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Código:</dt>
+                    <dd class="col-sm-8">
+                        <strong>{{ pieza.codigo }}</strong>
+                    </dd>
+                    
+                    <dt class="col-sm-4">Descripción:</dt>
+                    <dd class="col-sm-8">{{ pieza.descripcion }}</dd>
+                    
+                    <dt class="col-sm-4">Categoría:</dt>
+                    <dd class="col-sm-8">{{ pieza.categoria|default:"Sin categoría" }}</dd>
+                    
+                    <dt class="col-sm-4">Ubicación:</dt>
+                    <dd class="col-sm-8">{{ pieza.ubicacion }}</dd>
+                    
+                    <dt class="col-sm-4">Fecha Creación:</dt>
+                    <dd class="col-sm-8">{{ pieza.fecha_creacion|date:"d/m/Y H:i" }}</dd>
+                    
+                    <dt class="col-sm-4">Última Actualización:</dt>
+                    <dd class="col-sm-8">{{ pieza.fecha_actualizacion|date:"d/m/Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estado del Stock -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up"></i> Estado del Stock
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h3 class="text-primary">{{ pieza.stock_actual }}</h3>
+                        <small class="text-muted">Stock Actual</small>
+                    </div>
+                    <div class="col-4">
+                        <h3 class="text-warning">{{ pieza.stock_minimo }}</h3>
+                        <small class="text-muted">Stock Mínimo</small>
+                    </div>
+                    <div class="col-4">
+                        {% if pieza.stock_actual == 0 %}
+                            <span class="badge badge-sin-stock fs-6">Sin Stock</span>
+                        {% elif pieza.stock_critico %}
+                            <span class="badge badge-stock-critico fs-6">Stock Crítico</span>
+                        {% else %}
+                            <span class="badge badge-stock-normal fs-6">Stock Normal</span>
+                        {% endif %}
+                        <br><small class="text-muted">Estado</small>
+                    </div>
+                </div>
+                
+                {% if pieza.stock_critico %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atención:</strong> El stock está por debajo del mínimo establecido.
+                        {% if user.perfil in 'administrador,logistica' %}
+                            <a href="{% url 'registrar_entrada' %}?pieza={{ pieza.id }}" class="alert-link">
+                                Registrar entrada de materiales
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Acciones Rápidas -->
+        {% if user.perfil in 'administrador,logistica' %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i> Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'registrar_entrada' %}?pieza={{ pieza.id }}" class="btn btn-success">
+                        <i class="bi bi-arrow-down-circle"></i> Registrar Entrada
+                    </a>
+                    <a href="{% url 'registrar_salida' %}?pieza={{ pieza.id }}" class="btn btn-danger">
+                        <i class="bi bi-arrow-up-circle"></i> Registrar Salida
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Historial de Movimientos -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i> Historial de Movimientos
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if movimientos %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Stock Anterior</th>
+                                    <th>Stock Posterior</th>
+                                    <th>Usuario</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for movimiento in movimientos %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ movimiento.fecha_movimiento|date:"d/m/Y" }}</small><br>
+                                            <small class="text-muted">{{ movimiento.fecha_movimiento|time:"H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if movimiento.tipo_movimiento == 'entrada' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-arrow-down-circle"></i> Entrada
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-arrow-up-circle"></i> Salida
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td><strong>{{ movimiento.cantidad }}</strong></td>
+                                        <td>{{ movimiento.stock_anterior }}</td>
+                                        <td><strong>{{ movimiento.stock_posterior }}</strong></td>
+                                        <td>{{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</td>
+                                        <td>
+                                            {% if movimiento.observaciones %}
+                                                {{ movimiento.observaciones|truncatechars:30 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'historial_movimientos' %}?busqueda={{ pieza.codigo }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-clock-history"></i> Ver Historial Completo
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="bi bi-info-circle"></i>
+                        No hay movimientos registrados para esta pieza.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+</div>
+
+<!-- Tarjetas de estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_piezas }}</h4>
+                        <p class="card-text">Total de Piezas</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-boxes fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ piezas_stock_critico }}</h4>
+                        <p class="card-text">Stock Crítico</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-exclamation-triangle fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ alertas_activas }}</h4>
+                        <p class="card-text">Alertas Activas</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-bell fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ user.get_perfil_display }}</h4>
+                        <p class="card-text">Mi Perfil</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-person-check fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Piezas con Stock Crítico -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    Piezas con Stock Crítico
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if piezas_criticas %}
+                    <div class="list-group list-group-flush">
+                        {% for pieza in piezas_criticas %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ pieza.codigo }}</strong><br>
+                                    <small class="text-muted">{{ pieza.descripcion|truncatechars:40 }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge badge-stock-critico">
+                                        {{ pieza.stock_actual }}/{{ pieza.stock_minimo }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'alertas_stock' %}" class="btn btn-outline-warning btn-sm">
+                            Ver todas las alertas
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay piezas con stock crítico.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Movimientos Recientes -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Movimientos Recientes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if movimientos_recientes %}
+                    <div class="list-group list-group-flush">
+                        {% for movimiento in movimientos_recientes %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">
+                                        {% if movimiento.tipo_movimiento == 'entrada' %}
+                                            <i class="bi bi-arrow-down-circle text-success"></i>
+                                        {% else %}
+                                            <i class="bi bi-arrow-up-circle text-danger"></i>
+                                        {% endif %}
+                                        {{ movimiento.pieza.codigo }}
+                                    </h6>
+                                    <small>{{ movimiento.fecha_movimiento|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1">
+                                    <strong>{{ movimiento.cantidad }}</strong> unidades
+                                    ({{ movimiento.get_tipo_movimiento_display }})
+                                </p>
+                                <small>Por: {{ movimiento.usuario.get_full_name|default:movimiento.usuario.username }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'historial_movimientos' %}" class="btn btn-outline-primary btn-sm">
+                            Ver historial completo
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No hay movimientos registrados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning"></i>
+                    Acciones Rápidas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% if user.perfil in 'administrador,inventario,logistica' %}
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'crear_pieza' %}" class="btn btn-primary w-100">
+                            <i class="bi bi-plus-circle"></i> Registrar Pieza
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if user.perfil in 'administrador,logistica' %}
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'registrar_entrada' %}" class="btn btn-success w-100">
+                            <i class="bi bi-arrow-down-circle"></i> Registrar Entrada
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'registrar_salida' %}" class="btn btn-danger w-100">
+                            <i class="bi bi-arrow-up-circle"></i> Registrar Salida
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'lista_piezas' %}" class="btn btn-info w-100">
+                            <i class="bi bi-search"></i> Consultar Inventario
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

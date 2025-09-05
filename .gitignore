@@ -9,7 +9,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 # Excluir base de datos local
-*.sqlite3
+
 # Excluir entorno virtual
 .venv/
 # Excluir archivos de configuración de VSCode

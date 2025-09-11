@@ -38,6 +38,18 @@ class Pieza(models.Model):
         auto_now=True, 
         verbose_name='Última actualización'
     )
+    ultima_modificacion_por = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Última modificación por'
+    )
+    fecha_ultima_modificacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de última modificación'
+    )
     
     class Meta:
         verbose_name = 'Pieza'

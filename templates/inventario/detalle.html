@@ -47,6 +47,22 @@
                     
                     <dt class="col-sm-4">Última Actualización:</dt>
                     <dd class="col-sm-8">{{ pieza.fecha_actualizacion|date:"d/m/Y H:i" }}</dd>
+                    <dt class="col-sm-4">Modificado por:</dt>
+                    <dd class="col-sm-8">
+                        {% if pieza.ultima_modificacion_por %}
+                            {{ pieza.ultima_modificacion_por.get_full_name|default:pieza.ultima_modificacion_por.username }}
+                        {% else %}
+                            <span class="text-muted">Sin registro</span>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-4">Fecha de última modificación:</dt>
+                    <dd class="col-sm-8">
+                        {% if pieza.fecha_ultima_modificacion %}
+                            {{ pieza.fecha_ultima_modificacion|date:"d/m/Y H:i" }}
+                        {% else %}
+                            <span class="text-muted">Sin registro</span>
+                        {% endif %}
+                    </dd>
                 </dl>
             </div>
         </div>

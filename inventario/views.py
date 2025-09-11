@@ -81,7 +81,11 @@ def editar_pieza(request, pieza_id):
     if request.method == 'POST':
         form = PiezaForm(request.POST, instance=pieza)
         if form.is_valid():
-            form.save()
+            pieza_editada = form.save(commit=False)
+            pieza_editada.ultima_modificacion_por = request.user
+            from django.utils import timezone
+            pieza_editada.fecha_ultima_modificacion = timezone.now()
+            pieza_editada.save()
             messages.success(request, f'Pieza {pieza.codigo} actualizada exitosamente.')
             return redirect('lista_piezas')
     else:

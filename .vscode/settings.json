@@ -13,6 +13,7 @@
         "*.feature": "gherkin",
         "*.features": "gherkin"
     },
+    "workbench.iconTheme": "vs-seti",
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
     "behave-vsc.features": "features/*.feature",

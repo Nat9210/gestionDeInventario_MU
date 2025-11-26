@@ -35,6 +35,7 @@ def ensure_logged_in(context):
                 lambda driver: '/login' not in driver.current_url
             )
             print("Login completado exitosamente")
+            context.authenticated = True
         else:
             print("Usuario ya autenticado")
             

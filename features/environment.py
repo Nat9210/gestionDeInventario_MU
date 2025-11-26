@@ -1,4 +1,4 @@
-﻿from selenium import webdriver
+from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import os
 import time
@@ -23,11 +23,17 @@ def before_all(context):
     
     context.base_url = "http://127.0.0.1:8000"
     
-    # Configuración Chrome optimizada
+    # Configuración Chrome optimizada para sesiones Django
     chrome_options = Options()
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
+    
+    # Configuración específica para mantener sesiones
+    chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+    chrome_options.add_argument("--user-data-dir=/tmp/chrome_dev_test")
+    chrome_options.add_argument("--no-first-run")
+    chrome_options.add_argument("--disable-default-apps")
     
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -52,16 +58,48 @@ def before_all(context):
     context.browser.implicitly_wait(10)
     context.browser.maximize_window()
 
+def maintain_django_session(context):
+    """Mantener sesión activa de Django"""
+    try:
+        # Verificar si estamos en página de login cuando no deberíamos
+        current_url = context.browser.current_url
+        if '/login/' in current_url and hasattr(context, 'authenticated') and context.authenticated:
+            print("Sesión perdida, reautenticando...")
+            
+            # Re-login automático
+            context.browser.get(f"{context.base_url}/login/")
+            time.sleep(2)
+            
+            username_field = context.browser.find_element("name", "username")
+            password_field = context.browser.find_element("name", "password")
+            
+            username_field.clear()
+            username_field.send_keys("admin")
+            password_field.clear()
+            password_field.send_keys("admin")
+            
+            # Submit
+            login_form = context.browser.find_element("tag name", "form")
+            login_form.submit()
+            time.sleep(3)
+            
+            print("Sesión restaurada")
+            return True
+    except Exception as e:
+        print(f"Error manteniendo sesión: {e}")
+        return False
+    return True
+
 def after_all(context):
     """Limpieza final - cerrar navegador de forma segura"""
     try:
         if hasattr(context, 'browser') and context.browser:
             context.browser.quit()
-            print(" Navegador cerrado correctamente")
+            print("Navegador cerrado correctamente")
     except Exception as e:
-        print(f" Error cerrando navegador: {e}")
+        print(f"Error cerrando navegador: {e}")
     finally:
-        print(f" Evidencias guardadas en: {SCREENSHOTS_DIR}")
+        print(f"Evidencias guardadas en: {SCREENSHOTS_DIR}")
 
 def take_screenshot(context, name_suffix=""):
     """Función para tomar capturas de pantalla con mejoras anti-blancos"""
@@ -117,19 +155,19 @@ def take_screenshot(context, name_suffix=""):
                 if success:
                     # Verificar que el archivo no esté vacío
                     if os.path.exists(filepath) and os.path.getsize(filepath) > 1000:  # Mínimo 1KB
-                        print(f" Screenshot guardado: {filepath} (Intento {attempt + 1})")
+                        print(f"Screenshot guardado: {filepath} (Intento {attempt + 1})")
                         return filepath
                     else:
-                        print(f" Screenshot muy pequeño, reintentando... (Intento {attempt + 1})")
+                        print(f"Screenshot muy pequeño, reintentando... (Intento {attempt + 1})")
                         time.sleep(1)
                 else:
-                    print(f" Fallo en save_screenshot, reintentando... (Intento {attempt + 1})")
+                    print(f"Fallo en save_screenshot, reintentando... (Intento {attempt + 1})")
                     time.sleep(1)
             except Exception as e:
-                print(f" Error en intento {attempt + 1}: {e}")
+                print(f"Error en intento {attempt + 1}: {e}")
                 time.sleep(1)
         
-        print(f" No se pudo tomar screenshot válido después de 3 intentos")
+        print(f"No se pudo tomar screenshot válido después de 3 intentos")
         return None
         
     except Exception as e:
@@ -139,6 +177,7 @@ def take_screenshot(context, name_suffix=""):
 def before_scenario(context, scenario):
     """Ejecutar antes de cada escenario"""
     context.scenario = scenario  # Guardar referencia para screenshots
+    context.authenticated = False  # Reset estado de autenticación
     
     # Limpieza de datos de pruebas anteriores - CORREGIDO para usuarios.Usuario
     try:
@@ -147,7 +186,7 @@ def before_scenario(context, scenario):
     except Exception as e:
         print(f"Advertencia: No se pudo limpiar usuarios de prueba: {e}")
     
-    # Asegurar que estemos en una página válida antes del screenshot inicial
+    # Asegurar que estemos en una página válida
     try:
         current_url = context.browser.current_url
         if not current_url or current_url == "data:," or "about:blank" in current_url:
@@ -157,66 +196,75 @@ def before_scenario(context, scenario):
         context.browser.get(context.base_url)
         time.sleep(2)
     
-    # Tomar screenshot inicial del escenario
-    take_screenshot(context, "_START")
+    # NO tomar screenshot automático al inicio
 
 def after_step(context, step):
-    """Ejecutar después de cada paso - capturas en caso de fallo"""
-    if step.status == "failed":
-        print(f" Step FAILED: {step.name}")
+    """Ejecutar después de cada paso - capturas para documentar progreso"""
+    # Verificar y mantener sesión después de cada paso
+    maintain_django_session(context)
+    
+    # Tomar captura SIEMPRE después de cada paso (exitoso o fallido)
+    try:
+        step_name = step.name.replace(" ", "_").replace(",", "").replace(":", "")
+        if len(step_name) > 40:
+            step_name = step_name[:40]
         
-        # Información de debug antes de la captura
-        try:
-            current_url = context.browser.current_url
-            page_title = context.browser.title
-            print(f" URL actual: {current_url}")
-            print(f" Título página: {page_title}")
-        except Exception as e:
-            print(f" Error obteniendo info de página: {e}")
+        status_suffix = "_FAILED" if step.status == "failed" else "_OK"
+        screenshot_path = take_screenshot(context, f"_STEP_{step_name}{status_suffix}")
         
-        # Tomar captura con retry mejorado
-        screenshot_path = take_screenshot(context, "_FAILED")
-        if not screenshot_path:
-            print(" No se pudo capturar screenshot del fallo")
-        
-        # Información adicional de debug
-        try:
-            page_source_length = len(context.browser.page_source)
-            print(f" Tamaño del HTML: {page_source_length} caracteres")
-        except:
-            print(" No se pudo obtener el HTML de la página")
+        if step.status == "failed":
+            print(f"Step FAILED: {step.name}")
+            
+            # Información de debug en caso de fallo
+            try:
+                current_url = context.browser.current_url
+                page_title = context.browser.title
+                print(f"URL actual: {current_url}")
+                print(f"Título página: {page_title}")
+            except Exception as e:
+                print(f"Error obteniendo info de página: {e}")
+            
+            if not screenshot_path:
+                print("No se pudo capturar screenshot del fallo")
+        else:
+            print(f"Step OK: {step.name} - Captura guardada")
+            
+    except Exception as e:
+        print(f"Error en after_step: {e}")
 
 def after_scenario(context, scenario):
     """Ejecutar después de cada escenario - Captura SIEMPRE"""
     try:
         # Crear nombre de archivo descriptivo que incluya el estado
-        feature_name = scenario.feature.name.replace(" ", "_").replace("-", "_")
+
         scenario_name = scenario.name.replace(" ", "_").replace("-", "_")
         scenario_status = scenario.status.name if hasattr(scenario.status, 'name') else str(scenario.status)
         
         # Timestamp para evitar conflictos
-        timestamp = datetime.now().strftime("%H-%M-%S")
+        timestamp = datetime.now().strftime("%D-%m-%Y")
         
-        # Nombre de archivo más descriptivo
-        filename = f"{feature_name}_{scenario_name}_{scenario_status}_{timestamp}.png"
-        screenshot_path = os.path.join(context.daily_screenshot_dir, filename)
-        
-        # Tomar captura SIEMPRE
-        if hasattr(context, 'browser'):
-            try:
-                context.browser.save_screenshot(screenshot_path)
-                print(f" Captura ({scenario_status}) guardada en: {screenshot_path}")
-            except Exception as e:
-                print(f" Error al guardar captura: {e}")
+        # Solo tomar captura final si el escenario falló (ya tenemos capturas de cada paso)
+        if scenario_status == "failed":
+            filename = f"{scenario_name}_FINAL_{scenario_status}_{timestamp}.png"
+            screenshot_path = os.path.join(context.daily_screenshot_dir, filename)
+            
+            if hasattr(context, 'browser'):
+                try:
+                    context.browser.save_screenshot(screenshot_path)
+                    print(f"Captura final de fallo guardada en: {screenshot_path}")
+                except Exception as e:
+                    print(f"Error al guardar captura final: {e}")
+        else:
+            print(f"Escenario completado exitosamente - Capturas de pasos disponibles")
         
         # Solo limpiar cookies en scenarios de login para evitar interferencias
         if 'login' in scenario.name.lower():
-            print(" Limpiando cookies después de test de login...")
+            print("🧹 Limpiando cookies después de test de login...")
             context.browser.delete_all_cookies()
             context.browser.get(f"{context.base_url}/")
         
         # Resumen del escenario
-        status_icon = "" if scenario_status == "passed" else ""
+        status_icon = "ok" if scenario_status == "passed" else "fallo"
         print(f"{status_icon} Escenario {scenario.name}: {scenario_status.upper()}")
         
     except Exception as e:

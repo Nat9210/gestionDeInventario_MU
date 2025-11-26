@@ -1,0 +1,44 @@
+Feature: Sistema de Inventario MU # features/test_behave.feature:1
+  como usuario de la plataforma, quiero porder acceder de forma segura y poder
+  gestionar el inventario de piezas, incluyendo registro, busqueda y movimiento de stock,
+  para garantitazr el correcto funcionamiento de la plataforma.
+  Scenario: CP006 - Buscar pieza por categoría                                           # features/test_behave.feature:45
+    Given el usuario está en la sección de inventario de piezas                          # features/steps/buscarpieza_steps.py:49
+    When el usuario realiza una búsqueda de pieza usando un criterio válido (categoría)  # features/steps/buscarpieza_steps.py:104
+    Then el sistema muestra la lista de piezas que coinciden con el criterio de búsqueda # features/steps/buscarpieza_steps.py:254
+    And el usuario puede visualizar los detalles de las piezas encontradas               # features/steps/buscarpieza_steps.py:280
+
+  Scenario: CP007 - Buscar pieza por estado de stock                                                             # features/test_behave.feature:51
+    Given el usuario está en la sección de inventario de piezas                                                  # features/steps/buscarpieza_steps.py:49
+    When el usuario realiza una búsqueda de pieza usando un criterio válido (estado de stock: bajo, medio, alto) # features/steps/buscarpieza_steps.py:168
+    Then el sistema muestra la lista de piezas que coinciden con el criterio de búsqueda                         # features/steps/buscarpieza_steps.py:254
+    And el usuario puede visualizar los detalles de las piezas encontradas                                       # features/steps/buscarpieza_steps.py:280
+
+  Scenario: CP013 - Registrar pieza sin stock mínimo                                                     # features/test_behave.feature:91
+    Given el usuario está en el formulario de registro de nueva pieza                                    # features/steps/registrarpieza_steps.py:47
+    When el usuario intenta registrar una pieza dejando el campo de stock mínimo en blanco               # features/steps/registrarpieza_steps.py:124
+    Then el sistema muestra el mensaje de validación "este campo es obligatorio" o "rellenar este campo" # features/steps/registrarpieza_steps.py:197
+      ASSERT FAILED:
+
+    And el sistema no permite completar el registro de la pieza                                          # None
+
+  Scenario: CP018 - Buscar movimientos de pieza existente                                  # features/test_behave.feature:155
+    Given el usuario está en la página de historial de movimientos                         # features/steps/buscarmovimientos_steps.py:50
+    When el usuario busca el historial de movimientos de una pieza existente por su código # features/steps/buscarmovimientos_steps.py:61
+    Then el sistema muestra el historial completo de movimientos de la pieza solicitada    # features/steps/buscarmovimientos_steps.py:91
+
+  Scenario: CP020 - Buscar movimientos por rango de fecha correcta                                 # features/test_behave.feature:165
+    Given el usuario está en la página de historial de movimientos                                 # features/steps/buscarmovimientos_steps.py:50
+    When el usuario filtra el historial de una pieza existente aplicando un rango de fechas válido # features/steps/buscarmovimientos_steps.py:77
+    Then el sistema muestra solo los movimientos de la pieza dentro del rango de fecha indicado    # features/steps/buscarmovimientos_steps.py:168
+      ASSERT FAILED:
+
+
+  Scenario: CP021 - Buscar movimientos por fecha futura                                                            # features/test_behave.feature:170
+    Given el usuario está en la página de historial de movimientos                                                 # features/steps/buscarmovimientos_steps.py:50
+    When el usuario intenta filtrar el historial de una pieza usando un rango de fechas que incluye fechas futuras # features/steps/buscarmovimientos_steps.py:84
+    Then el sistema no permite aplicar el filtro con fechas a futuro                                               # features/steps/buscarmovimientos_steps.py:180
+      ASSERT FAILED:
+
+    And el sistema muestra una notificación de error o restricción                                                 # None
+

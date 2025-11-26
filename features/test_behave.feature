@@ -1,4 +1,4 @@
-Feature: gestion integral de la plataforma 
+Feature: Sistema de Inventario MU 
 
     como usuario de la plataforma, quiero porder acceder de forma segura y poder
     gestionar el inventario de piezas, incluyendo registro, busqueda y movimiento de stock,
@@ -38,19 +38,19 @@ Scenario: CP004 - Ingresar con al menos un campo incorrecto
 
 Scenario: CP005 - Buscar pieza por código o descripción
     Given el usuario está en la sección de inventario de piezas
-    When el usuario realiza una búsqueda de pieza usando un criterio válido (código o descripción)
+    When el usuario realiza una búsqueda de pieza usando el criterio "código o descripción"
     Then el sistema muestra la lista de piezas que coinciden con el criterio de búsqueda
     And el usuario puede visualizar los detalles de las piezas encontradas
 
 Scenario: CP006 - Buscar pieza por categoría
     Given el usuario está en la sección de inventario de piezas
-    When el usuario realiza una búsqueda de pieza usando un criterio válido (categoría)
+    When el usuario realiza una búsqueda de pieza usando el criterio "categoría"
     Then el sistema muestra la lista de piezas que coinciden con el criterio de búsqueda
     And el usuario puede visualizar los detalles de las piezas encontradas
 
 Scenario: CP007 - Buscar pieza por estado de stock
     Given el usuario está en la sección de inventario de piezas
-    When el usuario realiza una búsqueda de pieza usando un criterio válido (estado de stock: bajo, medio, alto)
+    When el usuario realiza una búsqueda de pieza usando el criterio "estado de stock"
     Then el sistema muestra la lista de piezas que coinciden con el criterio de búsqueda
     And el usuario puede visualizar los detalles de las piezas encontradas
 
@@ -96,7 +96,7 @@ Scenario: CP013 - Registrar pieza sin stock mínimo
 
 
 # ----------------------------------------------------------------------
-# 4. REGISTRAR ENTRADA/SALIDA DE MATERIALES (CP014 al CP017 y adiciones)
+# 4. REGISTRAR ENTRADA/SALIDA DE MATERIALES (CP014 al CP017)
 
 Scenario: CP014 - Registrar entrada correctamente
     Given el usuario está en la sección de registro de entrada de materiales
@@ -104,43 +104,43 @@ Scenario: CP014 - Registrar entrada correctamente
     Then el sistema confirma el registro con el mensaje "entrada registrada"
     And el stock de la pieza seleccionada se actualiza correctamente
 
-Scenario: CP015 - Registrar salida correctamente
+Scenario: CP014.1 - Registrar salida correctamente
     Given el usuario está en la sección de registro de salida de materiales
     When el usuario registra una salida de materiales con datos válidos para la pieza y cantidad
     Then el sistema confirma el registro con el mensaje "salida registrada"
     And el stock de la pieza seleccionada se actualiza correctamente
 
-Scenario: CP016 - Registrar entrada sin seleccionar pieza
+Scenario: CP015 - Registrar entrada sin seleccionar pieza
     Given el usuario está en la sección de registro de entrada de materiales
     When el usuario intenta registrar una entrada de materiales sin especificar la pieza
     Then el sistema muestra el mensaje de validación "este campo es obligatorio" o "selecciona un elemento de la lista"
     And el sistema no permite registrar la entrada de materiales
 
-Scenario: CP017 - Registrar salida sin seleccionar pieza
+Scenario: CP015.1 - Registrar salida sin seleccionar pieza
     Given el usuario está en la sección de registro de salida de materiales
     When el usuario intenta registrar una salida de materiales sin especificar la pieza
     Then el sistema muestra el mensaje de validación "este campo es obligatorio" o "selecciona un elemento de la lista"
     And el sistema no permite registrar la salida de materiales
 
-Scenario: Registrar entrada con cantidad negativa
+Scenario: CP016 - Registrar entrada con cantidad negativa
     Given el usuario está en la sección de registro de entrada de materiales
     When el usuario intenta registrar una entrada de materiales con una cantidad negativa
     Then el sistema muestra el mensaje de error "el valor debe ser positivo"
     And el sistema no permite registrar la entrada de materiales
 
-Scenario: Registrar salida con cantidad negativa
+Scenario: CP016.1 - Registrar salida con cantidad negativa
     Given el usuario está en la sección de registro de salida de materiales
     When el usuario intenta registrar una salida de materiales con una cantidad negativa
     Then el sistema muestra el mensaje de error "el valor debe ser positivo"
     And el sistema no permite registrar la salida de materiales
 
-Scenario: Registrar entrada con cantidad vacía
+Scenario: CP017 - Registrar entrada con cantidad vacía
     Given el usuario está en la sección de registro de entrada de materiales
     When el usuario intenta registrar una entrada de materiales sin especificar la cantidad
     Then el sistema muestra el mensaje de validación "este campo es obligatorio"
     And el sistema no permite registrar la entrada de materiales
 
-Scenario: Registrar salida con cantidad vacía
+Scenario: CP017.1 - Registrar salida con cantidad vacía
     Given el usuario está en la sección de registro de salida de materiales
     When el usuario intenta registrar una salida de materiales sin especificar la cantidad
     Then el sistema muestra el mensaje de validación "este campo es obligatorio"

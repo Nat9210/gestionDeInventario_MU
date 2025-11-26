@@ -44,6 +44,7 @@ def step_impl(context):
 @then('el inicio de sesión es exitoso')
 def step_impl(context):
     assert '/dashboard' in context.browser.current_url or 'Dashboard' in context.browser.page_source
+    context.authenticated = True  # Marcar como autenticado
 
 @then('la plataforma muestra el dashboard principal')
 def step_impl(context):
